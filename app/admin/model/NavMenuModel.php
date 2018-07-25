@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -14,7 +14,7 @@ use think\Exception;
 use think\Model;
 use tree\Tree;
 use think\Db;
-use think\Request;
+use think\facade\Request;
 
 class NavMenuModel extends Model
 {
@@ -81,7 +81,7 @@ class NavMenuModel extends Model
                 $href = cmf_url($href['action'], $href['param']);
             } else {
                 if ($hrefOld == "home") {
-                    $href = Request::instance()->root() . "/";
+                    $href = Request::root() . "/";
                 } else {
                     $href = $hrefOld;
                 }

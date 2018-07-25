@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -54,6 +54,7 @@ class AdminArticleController extends AdminBaseController
         $this->assign('category', $categoryId);
         $this->assign('page', $data->render());
 
+
         return $this->fetch();
     }
 
@@ -95,7 +96,14 @@ class AdminArticleController extends AdminBaseController
     {
         if ($this->request->isPost()) {
             $data   = $this->request->param();
+
+            //状态只能设置默认值。未发布、未置顶、未推荐
+            $data['post']['post_status'] = 0;
+            $data['post']['is_top'] = 0;
+            $data['post']['recommended'] = 0;
+
             $post   = $data['post'];
+
             $result = $this->validate($post, 'AdminArticle');
             if ($result !== true) {
                 $this->error($result);
@@ -119,8 +127,16 @@ class AdminArticleController extends AdminBaseController
                 }
             }
 
+
+
             $portalPostModel->adminAddArticle($data['post'], $data['post']['categories']);
 
+            $data['post']['id'] = $portalPostModel->id;
+            $hookParam          = [
+                'is_add'  => true,
+                'article' => $data['post']
+            ];
+            hook('portal_admin_after_save_article', $hookParam);
 
 
             $this->success('添加成功!', url('AdminArticle/edit', ['id' => $portalPostModel->id]));
@@ -178,6 +194,12 @@ class AdminArticleController extends AdminBaseController
 
         if ($this->request->isPost()) {
             $data   = $this->request->param();
+
+            //需要抹除发布、置顶、推荐的修改。
+            unset($data['post']['post_status']);
+            unset($data['post']['is_top']);
+            unset($data['post']['recommended']);
+
             $post   = $data['post'];
             $result = $this->validate($post, 'AdminArticle');
             if ($result !== true) {
@@ -203,6 +225,12 @@ class AdminArticleController extends AdminBaseController
             }
 
             $portalPostModel->adminEditArticle($data['post'], $data['post']['categories']);
+
+            $hookParam = [
+                'is_add'  => false,
+                'article' => $data['post']
+            ];
+            hook('portal_admin_after_save_article', $hookParam);
 
             $this->success('保存成功!');
 
@@ -234,12 +262,16 @@ class AdminArticleController extends AdminBaseController
                 'object_id'   => $result['id'],
                 'create_time' => time(),
                 'table_name'  => 'portal_post',
-                'name'        => $result['post_title']
+                'name'        => $result['post_title'],
+                'user_id'=>cmf_get_current_admin_id()
             ];
             $resultPortal = $portalPostModel
                 ->where(['id' => $id])
                 ->update(['delete_time' => time()]);
             if ($resultPortal) {
+                Db::name('portal_category_post')->where(['post_id'=>$id])->update(['status'=>0]);
+                Db::name('portal_tag_post')->where(['post_id'=>$id])->update(['status'=>0]);
+
                 Db::name('recycleBin')->insert($data);
             }
             $this->success("删除成功！", '');
@@ -251,12 +283,15 @@ class AdminArticleController extends AdminBaseController
             $recycle = $portalPostModel->where(['id' => ['in', $ids]])->select();
             $result  = $portalPostModel->where(['id' => ['in', $ids]])->update(['delete_time' => time()]);
             if ($result) {
+                Db::name('portal_category_post')->where(['post_id' => ['in', $ids]])->update(['status'=>0]);
+                Db::name('portal_tag_post')->where(['post_id' => ['in', $ids]])->update(['status'=>0]);
                 foreach ($recycle as $value) {
                     $data = [
                         'object_id'   => $value['id'],
                         'create_time' => time(),
                         'table_name'  => 'portal_post',
-                        'name'        => $value['post_title']
+                        'name'        => $value['post_title'],
+                        'user_id'=>cmf_get_current_admin_id()
                     ];
                     Db::name('recycleBin')->insert($data);
                 }

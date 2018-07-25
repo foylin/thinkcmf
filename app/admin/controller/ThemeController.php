@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -37,7 +37,12 @@ class ThemeController extends AdminBaseController
         $themeModel = new ThemeModel();
         $themes     = $themeModel->select();
         $this->assign("themes", $themes);
-        $this->assign('default_theme', config('cmf_default_theme'));
+
+        $defaultTheme = config('cmf_default_theme');
+        if ($temp = session('cmf_default_theme')){
+            $defaultTheme = $temp;
+        }
+        $this->assign('default_theme', $defaultTheme);
         return $this->fetch();
     }
 
@@ -95,6 +100,10 @@ class ThemeController extends AdminBaseController
     public function uninstall()
     {
         $theme      = $this->request->param('theme');
+        if ($theme == "simpleboot3" || config('cmf_default_theme') == $theme ){
+            $this->error("官方自带模板或当前使用中的模板不可以卸载");
+        }
+
         $themeModel = new ThemeModel();
         $themeModel->transaction(function () use ($theme, $themeModel) {
             $themeModel->where(['theme' => $theme])->delete();
@@ -179,6 +188,11 @@ class ThemeController extends AdminBaseController
     public function active()
     {
         $theme      = $this->request->param('theme');
+
+        if ($theme == config('cmf_default_theme')){
+            $this->error('模板已启用',url("theme/index"));
+        }
+
         $themeModel = new ThemeModel();
         $themeCount = $themeModel->where('theme', $theme)->count();
 
@@ -191,8 +205,9 @@ class ThemeController extends AdminBaseController
         if ($result === false) {
             $this->error('配置写入失败!');
         }
+        session('cmf_default_theme',$theme);
 
-        $this->success("模板已启用");
+        $this->success("模板启用成功",url("theme/index"));
 
     }
 
@@ -276,15 +291,14 @@ class ThemeController extends AdminBaseController
         $items = [];
         $item  = [];
 
-        $vars = [];
         if ($tab == 'var' && !empty($oldMore['vars']) && is_array($oldMore['vars'])) {
 
-            if (isset($vars[$varName]) && is_array($vars[$varName])) {
-                $items = $vars[$varName]['value'];
+            if (isset($oldMore['vars'][$varName]) && is_array($oldMore['vars'][$varName])) {
+                $items = $oldMore['vars'][$varName]['value'];
             }
 
-            if (isset($vars[$varName]['item'])) {
-                $item = $vars[$varName]['item'];
+            if (isset($oldMore['vars'][$varName]['item'])) {
+                $item = $oldMore['vars'][$varName]['item'];
             }
 
         }
@@ -529,7 +543,7 @@ class ThemeController extends AdminBaseController
             foreach ($more['vars'] as $mVarName => $mVar) {
 
                 if ($mVarName == $varName && $mVar['type'] == 'array') {
-                    if (!empty($var['value']) && is_array($var['value']) && isset($var['value'][$itemIndex])) {
+                    if (!empty($mVar['value']) && is_array($mVar['value']) && isset($mVar['value'][$itemIndex])) {
                         array_splice($more['vars'][$mVarName]['value'], $itemIndex, 1);
                     } else {
                         $this->error('指定数据不存在!');

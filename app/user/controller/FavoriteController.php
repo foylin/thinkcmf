@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -62,7 +62,11 @@ class FavoriteController extends UserBaseController
         $table = $this->request->param('table');
 
 
-        $findFavoriteCount = Db::name("user_favorite")->where(['object_id' => $id, 'table_name' => $table])->count();
+        $findFavoriteCount = Db::name("user_favorite")->where([
+            'object_id'  => $id,
+            'table_name' => $table,
+            'user_id'    => cmf_get_current_user_id()
+        ])->count();
 
         if ($findFavoriteCount > 0) {
             $this->error("您已收藏过啦");

@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -39,13 +39,13 @@ class IndexController extends Controller
         $data['phpversion'] = @phpversion();
         $data['os']         = PHP_OS;
         $tmp                = function_exists('gd_info') ? gd_info() : [];
-        $server             = $_SERVER["SERVER_SOFTWARE"];
-        $host               = (empty($_SERVER["SERVER_ADDR"]) ? $_SERVER["SERVER_HOST"] : $_SERVER["SERVER_ADDR"]);
-        $name               = $_SERVER["SERVER_NAME"];
-        $max_execution_time = ini_get('max_execution_time');
-        $allow_reference    = (ini_get('allow_call_time_pass_reference') ? '<font color=green>[√]On</font>' : '<font color=red>[×]Off</font>');
-        $allow_url_fopen    = (ini_get('allow_url_fopen') ? '<font color=green>[√]On</font>' : '<font color=red>[×]Off</font>');
-        $safe_mode          = (ini_get('safe_mode') ? '<font color=red>[×]On</font>' : '<font color=green>[√]Off</font>');
+//        $server             = $_SERVER["SERVER_SOFTWARE"];
+//        $host               = $this->request->host();
+//        $name               = $_SERVER["SERVER_NAME"];
+//        $max_execution_time = ini_get('max_execution_time');
+//        $allow_reference    = (ini_get('allow_call_time_pass_reference') ? '<font color=green>[√]On</font>' : '<font color=red>[×]Off</font>');
+//        $allow_url_fopen    = (ini_get('allow_url_fopen') ? '<font color=green>[√]On</font>' : '<font color=red>[×]Off</font>');
+//        $safe_mode          = (ini_get('safe_mode') ? '<font color=red>[×]On</font>' : '<font color=green>[√]Off</font>');
 
         $err = 0;
         if (empty($tmp['GD Version'])) {
@@ -169,9 +169,18 @@ class IndexController extends Controller
             $dbConfig['password'] = $this->request->param('dbpw');
             $dbConfig['hostport'] = $this->request->param('dbport');
             $dbConfig['charset']  = $this->request->param('dbcharset', 'utf8mb4');
-            $db                   = Db::connect($dbConfig);
-            $dbName               = $this->request->param('dbname');
-            $sql                  = "CREATE DATABASE IF NOT EXISTS `{$dbName}` DEFAULT CHARACTER SET " . $dbConfig['charset'];
+
+            $userLogin = $this->request->param('manager');
+            $userPass  = $this->request->param('manager_pwd');
+            $userEmail = $this->request->param('manager_email');
+            //检查密码。空 6-32字符。
+            empty($userPass) && $this->error("密码不可以为空");
+            strlen($userPass) < 6 && $this->error("密码长度最少6位");
+            strlen($userPass) > 32 && $this->error("密码长度最多32位");
+
+            $db     = Db::connect($dbConfig);
+            $dbName = $this->request->param('dbname');
+            $sql    = "CREATE DATABASE IF NOT EXISTS `{$dbName}` DEFAULT CHARACTER SET " . $dbConfig['charset'];
             $db->execute($sql) || $this->error($db->getError());
 
             $dbConfig['database'] = $dbName;
@@ -197,10 +206,6 @@ class IndexController extends Controller
                 'site_seo_keywords'    => $seoKeywords,
                 'site_seo_description' => $siteInfo
             ]);
-
-            $userLogin = $this->request->param('manager');
-            $userPass  = $this->request->param('manager_pwd');
-            $userEmail = $this->request->param('manager_email');
 
             session('install.admin_info', [
                 'user_login' => $userLogin,
@@ -325,16 +330,35 @@ class IndexController extends Controller
             $dbConfig         = $this->request->param();
             $dbConfig['type'] = "mysql";
 
+            $supportInnoDb = false;
+
             try {
                 Db::connect($dbConfig)->query("SELECT VERSION();");
+                $engines = Db::connect($dbConfig)->query("SHOW ENGINES;");
+
+                foreach ($engines as $engine) {
+                    if ($engine['Engine'] == 'InnoDB' && $engine['Support'] != 'NO') {
+                        $supportInnoDb = true;
+                        break;
+                    }
+                }
             } catch (\Exception $e) {
-                die("");
+                $this->error('数据库账号或密码不正确！');
             }
-            exit("1");
+            if($supportInnoDb){
+                $this->success('验证成功！');
+            }else{
+                $this->error('数据库账号密码验证通过，但不支持InnoDb!');
+            }
         } else {
-            exit("need post!");
+            $this->error('非法请求方式！');
         }
 
+    }
+
+    public function testRewrite()
+    {
+        $this->success('success');
     }
 
 }

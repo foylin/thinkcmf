@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -48,8 +48,8 @@ class MenuController extends AdminBaseController
             $result[$key]['parent_id_node'] = ($value['parent_id']) ? ' class="child-of-node-' . $value['parent_id'] . '"' : '';
             $result[$key]['style']          = empty($value['parent_id']) ? '' : 'display:none;';
             $result[$key]['str_manage']     = '<a href="' . url("Menu/add", ["parent_id" => $value['id'], "menu_id" => $this->request->param("menu_id")])
-                . '">' . lang('ADD_SUB_MENU') . '</a> | <a href="' . url("Menu/edit", ["id" => $value['id'], "menu_id" => $this->request->param("menu_id")])
-                . '">' . lang('EDIT') . '</a> | <a class="js-ajax-delete" href="' . url("Menu/delete", ["id" => $value['id'], "menu_id" => $this->request->param("menu_id")]) . '">' . lang('DELETE') . '</a> ';
+                . '">' . lang('ADD_SUB_MENU') . '</a>  <a href="' . url("Menu/edit", ["id" => $value['id'], "menu_id" => $this->request->param("menu_id")])
+                . '">' . lang('EDIT') . '</a>  <a class="js-ajax-delete" href="' . url("Menu/delete", ["id" => $value['id'], "menu_id" => $this->request->param("menu_id")]) . '">' . lang('DELETE') . '</a> ';
             $result[$key]['status']         = $value['status'] ? lang('DISPLAY') : lang('HIDDEN');
             if (APP_DEBUG) {
                 $result[$key]['app'] = $value['app'] . "/" . $value['controller'] . "/" . $value['action'];
@@ -168,6 +168,7 @@ class MenuController extends AdminBaseController
                 $sessionAdminMenuIndex = session('admin_menu_index');
                 $to                    = empty($sessionAdminMenuIndex) ? "Menu/index" : $sessionAdminMenuIndex;
                 $this->_exportAppMenuDefaultLang();
+                cache(null, 'admin_menus');// 删除后台菜单缓存
                 $this->success("添加成功！", url($to));
             }
         }
@@ -272,6 +273,7 @@ class MenuController extends AdminBaseController
                     ])->update(["title" => $menuName, 'param' => $param]);//type 1-admin rule;2-user rule
                 }
                 $this->_exportAppMenuDefaultLang();
+                cache(null, 'admin_menus');// 删除后台菜单缓存
                 $this->success("保存成功！");
             }
         }
@@ -482,7 +484,7 @@ class MenuController extends AdminBaseController
                                     'controller' => $controllerName,
                                     'action'     => $action
                                 ])->update([
-                                    'parent_id' => $parentId,
+                                    //'parent_id' => $parentId,
                                     'type'      => $type,
                                 ]);
                                 $menuName = $findAdminMenu['name'];
@@ -638,7 +640,7 @@ class MenuController extends AdminBaseController
                                             'controller' => $controllerName,
                                             'action'     => $action
                                         ])->update([
-                                            'parent_id' => $parentId,
+                                            //'parent_id' => $parentId,
                                             'type'      => $type,
                                         ]);
                                         $menuName = $findAdminMenu['name'];
@@ -690,6 +692,8 @@ class MenuController extends AdminBaseController
         }
         $this->assign("app", $app);
         $this->assign("new_menus", $newMenus);
+
+        cache(null, 'admin_menus');// 删除后台菜单缓存
 
         return $this->fetch();
 

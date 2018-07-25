@@ -69,16 +69,36 @@ $(function () {
         return false;
     });
 
+    //一键关闭顶部打开的菜单
+    $("#close-wrapper").click(function () {
+        $("#task-content-inner").children().each(function () {
+            //保留首页。保留当前页面菜单。
+            if ($(this).attr("app-id") != 0 && $(this).attr("class").indexOf("active") < 0) {
+                $(this).remove();
+            }
+        });
+        $("#content iframe:hidden").each(function () {
+            //保留首页iframe
+            if ($(this).attr("src").indexOf("/admin/main/index") < 0) {
+                $(this).remove();
+            }
+        });
+        calcTaskContentWidth();
+        $("#task-next").click();
+    });
+
     calcTaskContentWidth();
 });
 
 function calcTaskContentWidth() {
     var width = $("#task-content-inner").width();
-    if (($(document).width() - 268 - tabwidth - 30 * 2) < width) {
-        $("#task-content").width($(document).width() - 268 - tabwidth - 30 * 2);
+    if (($(document).width() - 318 - tabwidth - 30 * 2) < width) {
+        $("#task-content").width($(document).width() - 318 - tabwidth - 30 * 2);
         $("#task-next,#task-pre").show();
+        $('#close-all-tabs-btn').show();
     } else {
         $("#task-next,#task-pre").hide();
+        $('#close-all-tabs-btn').hide();
         $("#task-content").width(width);
     }
 }
@@ -118,6 +138,10 @@ function openapp(url, appId, appname, refresh) {
         $appiframe = $(appiframe_tpl).attr("src", url).attr("id", "appiframe-" + appId);
         $appiframe.appendTo("#content");
         $appiframe.load(function () {
+            var srcLoaded = $appiframe.get(0).contentWindow.location;
+            if (srcLoaded.pathname == GV.ROOT) {
+                window.location.reload(true);
+            }
             $loading.hide();
         });
         calcTaskContentWidth();
@@ -131,6 +155,10 @@ function openapp(url, appId, appname, refresh) {
             $loading.show();
             $iframe.attr("src", url);
             $iframe.load(function () {
+                var srcLoaded = $iframe.get(0).contentWindow.location;
+                if (srcLoaded.pathname == GV.ROOT) {
+                    window.location.reload(true);
+                }
                 $loading.hide();
             });
         }

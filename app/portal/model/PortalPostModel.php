@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -35,11 +35,18 @@ class PortalPostModel extends Model
 
     /**
      * 关联分类表
-     * @return $this
      */
     public function categories()
     {
         return $this->belongsToMany('PortalCategoryModel', 'portal_category_post', 'category_id', 'post_id');
+    }
+
+    /**
+     * 关联标签表
+     */
+    public function tags()
+    {
+        return $this->belongsToMany('PortalTagModel', 'portal_tag_post', 'tag_id', 'post_id');
     }
 
     /**
@@ -112,25 +119,31 @@ class PortalPostModel extends Model
      */
     public function adminEditArticle($data, $categories)
     {
-        $data['user_id'] = cmf_get_current_admin_id();
+
+        unset($data['user_id']);
 
         if (!empty($data['more']['thumbnail'])) {
             $data['more']['thumbnail'] = cmf_asset_relative_url($data['more']['thumbnail']);
         }
-
-        $data['post_status'] = empty($data['post_status']) ? 0 : 1;
-        $data['is_top']      = empty($data['is_top']) ? 0 : 1;
-        $data['recommended'] = empty($data['recommended']) ? 0 : 1;
-
         $this->allowField(true)->isUpdate(true)->data($data, true)->save();
 
         if (is_string($categories)) {
             $categories = explode(',', $categories);
         }
 
-        $this->categories()->detach();
+        $oldCategoryIds        = $this->categories()->column('category_id');
+        $sameCategoryIds       = array_intersect($categories, $oldCategoryIds);
+        $needDeleteCategoryIds = array_diff($oldCategoryIds, $sameCategoryIds);
+        $newCategoryIds        = array_diff($categories, $sameCategoryIds);
 
-        $this->categories()->save($categories);
+        if (!empty($needDeleteCategoryIds)) {
+            $this->categories()->detach($needDeleteCategoryIds);
+        }
+
+        if (!empty($newCategoryIds)) {
+            $this->categories()->attach(array_values($newCategoryIds));
+        }
+
 
         $data['post_keywords'] = str_replace('，', ',', $data['post_keywords']);
 
@@ -230,11 +243,8 @@ class PortalPostModel extends Model
                     Db::commit();
                 } catch (\Exception $e) {
 
-                    $transStatus = false;
                     // 回滚事务
                     Db::rollback();
-
-
                 }
                 return $transStatus;
 
@@ -275,8 +285,6 @@ class PortalPostModel extends Model
 
                 } catch (\Exception $e) {
 
-                    $transStatus = false;
-
                     // 回滚事务
                     Db::rollback();
 
@@ -287,12 +295,10 @@ class PortalPostModel extends Model
 
             } else {
                 return false;
-                //  $this->error(lang('DELETE_FAILED'));
             }
 
         } else {
             return false;
-            //$this->error(lang('DELETE_FAILED'));
         }
     }
 

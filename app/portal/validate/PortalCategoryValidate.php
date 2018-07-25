@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -35,9 +35,17 @@ class PortalCategoryValidate extends Validate
             return true;
         }
 
+        if (preg_match("/^\d+$/", $value)) {
+            return "别名不能为纯数字!";
+        }
+
         $routeModel = new RouteModel();
-        $fullUrl    = $routeModel->buildFullUrl('portal/List/index', ['id' => $data['id']]);
-        if (!$routeModel->exists($value, $fullUrl)) {
+        if (isset($data['id']) && $data['id'] > 0) {
+            $fullUrl = $routeModel->buildFullUrl('portal/List/index', ['id' => $data['id']]);
+        } else {
+            $fullUrl = $routeModel->getFullUrlByUrl($data['alias']);
+        }
+        if (!$routeModel->existsRoute($value, $fullUrl)) {
             return true;
         } else {
             return "别名已经存在!";

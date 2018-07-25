@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -90,20 +90,19 @@ class PostService
         if (empty($categoryId)) {
 
             $where = [
-                'post.post_type'      => 1,
-                'post.published_time' => [['< time', time()], ['> time', 0]],
-                'post.post_status'    => 1,
-                'post.delete_time'    => 0,
-                'post.id'             => $postId
+                'post.post_type'   => 1,
+                'post.post_status' => 1,
+                'post.delete_time' => 0,
+                'post.id'          => $postId
             ];
 
             $article = $portalPostModel->alias('post')->field('post.*')
                 ->where($where)
+                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
                 ->find();
         } else {
             $where = [
                 'post.post_type'       => 1,
-                'post.published_time'  => [['< time', time()], ['> time', 0]],
                 'post.post_status'     => 1,
                 'post.delete_time'     => 0,
                 'relation.category_id' => $categoryId,
@@ -116,6 +115,94 @@ class PostService
             $article = $portalPostModel->alias('post')->field('post.*')
                 ->join($join)
                 ->where($where)
+                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->find();
+        }
+
+
+        return $article;
+    }
+
+    //上一篇文章
+    public function publishedPrevArticle($postId, $categoryId = 0)
+    {
+        $portalPostModel = new PortalPostModel();
+
+        if (empty($categoryId)) {
+
+            $where = [
+                'post.post_type'      => 1,
+                'post.post_status'    => 1,
+                'post.delete_time'    => 0,
+                'post.id '            => ['<', $postId]
+            ];
+
+            $article = $portalPostModel->alias('post')->field('post.*')
+                ->where($where)
+                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->order('id', 'DESC')
+                ->find();
+
+        } else {
+            $where = [
+                'post.post_type'       => 1,
+                'post.post_status'     => 1,
+                'post.delete_time'     => 0,
+                'relation.category_id' => $categoryId,
+                'relation.post_id'     => ['<', $postId]
+            ];
+
+            $join    = [
+                ['__PORTAL_CATEGORY_POST__ relation', 'post.id = relation.post_id']
+            ];
+            $article = $portalPostModel->alias('post')->field('post.*')
+                ->join($join)
+                ->where($where)
+                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->order('id', 'DESC')
+                ->find();
+        }
+
+
+        return $article;
+    }
+
+    //下一篇文章
+    public function publishedNextArticle($postId, $categoryId = 0)
+    {
+        $portalPostModel = new PortalPostModel();
+
+        if (empty($categoryId)) {
+
+            $where = [
+                'post.post_type'      => 1,
+                'post.post_status'    => 1,
+                'post.delete_time'    => 0,
+                'post.id'             => ['>', $postId]
+            ];
+
+            $article = $portalPostModel->alias('post')->field('post.*')
+                ->where($where)
+                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->order('id', 'ASC')
+                ->find();
+        } else {
+            $where = [
+                'post.post_type'       => 1,
+                'post.post_status'     => 1,
+                'post.delete_time'     => 0,
+                'relation.category_id' => $categoryId,
+                'relation.post_id'     => ['>', $postId]
+            ];
+
+            $join    = [
+                ['__PORTAL_CATEGORY_POST__ relation', 'post.id = relation.post_id']
+            ];
+            $article = $portalPostModel->alias('post')->field('post.*')
+                ->join($join)
+                ->where($where)
+                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->order('id', 'ASC')
                 ->find();
         }
 
@@ -127,16 +214,17 @@ class PostService
     {
 
         $where = [
-            'post_type'      => 2,
-            'published_time' => [['< time', time()], ['> time', 0]],
-            'post_status'    => 1,
-            'delete_time'    => 0,
-            'id'             => $pageId
+            'post_type' => 2,
+
+            'post_status' => 1,
+            'delete_time' => 0,
+            'id'          => $pageId
         ];
 
         $portalPostModel = new PortalPostModel();
         $page            = $portalPostModel
             ->where($where)
+            ->where('published_time', ['< time', time()], ['> time', 0], 'and')
             ->find();
 
         return $page;

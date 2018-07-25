@@ -1249,7 +1249,7 @@ Wind.ready(function () {
             iframeTools: 'artDialog/iframeTools',
             xd: 'xd',//Iframe跨域通信
 
-            noty: 'noty/noty',
+            noty: 'noty/noty-2.4.1',
             noty3: 'noty3/noty.min',
             jcrop: 'jcrop/js/jcrop',
             ajaxfileupload: 'ajaxfileupload',
@@ -1264,7 +1264,9 @@ Wind.ready(function () {
             bootstrapDatetimePicker: 'bootstrap-datetimepicker/js/bootstrap-datetimepicker',
             dragula: 'dragula/dragula.min',
             imagesloaded: 'masonry/imagesloaded.pkgd.min',
-            masonry: 'masonry/masonry.pkgd.min'
+            masonry: 'masonry/masonry.pkgd.min',
+            masonry3: 'masonry/masonry-3.3.2.pkgd',
+            ueditor:'ueditor/ueditor.all.min'
         },
         //CSS路径
         alias_css = {
@@ -1280,7 +1282,8 @@ Wind.ready(function () {
             colorpicker: 'colorpicker/css/colorpicker',
             animate: 'animate/animate',
             bootstrapDatetimePicker: 'bootstrap-datetimepicker/css/bootstrap-datetimepicker',
-            dragula: 'dragula/dragula.min'
+            dragula: 'dragula/dragula.min',
+            ueditor:'ueditor/themes/default/css/ueditor'
         };
 
     //add suffix and version

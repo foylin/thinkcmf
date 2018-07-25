@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -10,6 +10,8 @@
 // +----------------------------------------------------------------------
 namespace app\admin\controller;
 
+use app\admin\model\RecycleBinModel;
+use app\admin\model\RouteModel;
 use cmf\controller\AdminBaseController;
 use think\Db;
 
@@ -30,7 +32,8 @@ class RecycleBinController extends AdminBaseController
      */
     function index()
     {
-        $list = Db::name('recycleBin')->order('create_time desc')->paginate(10);
+        $recycleBinModel = new RecycleBinModel();
+        $list = $recycleBinModel->order('create_time desc')->paginate(10);
         // 获取分页显示
         $page = $list->render();
         $this->assign('page', $page);
@@ -59,11 +62,16 @@ class RecycleBinController extends AdminBaseController
 
         $tableName = explode('#', $result['table_name']);
         $tableName = $tableName[0];
-        //还原文章
+        //还原资源
         if ($result) {
             $res = Db::name($tableName)
                 ->where(['id' => $result['object_id']])
                 ->update(['delete_time' => '0']);
+            if ($tableName =='portal_post'){
+                Db::name('portal_category_post')->where('post_id',$result['object_id'])->update(['status'=>1]);
+                Db::name('portal_tag_post')->where('post_id',$result['object_id'])->update(['status'=>1]);
+            }
+
             if ($res) {
                 $re = Db::name('recycleBin')->where('id', $id)->delete();
                 if ($re) {
@@ -90,14 +98,30 @@ class RecycleBinController extends AdminBaseController
     {
         $id     = $this->request->param('id');
         $result = Db::name('recycleBin')->where(['id' => $id])->find();
-        //删除文章
+        //删除资源
         if ($result) {
-            $re = Db::name($result['table_name'])->where('id', $result['object_id'])->delete();
+
+            //页面没有单独的表.
+            if($result['table_name'] === 'portal_post#page'){
+                $re = Db::name('portal_post')->where('id', $result['object_id'])->delete();
+                //消除路由
+                $routeModel = new RouteModel();
+                $routeModel->setRoute('', 'portal/Page/index', ['id' => $result['object_id']], 2, 5000);
+                $routeModel->getRoutes(true);
+            }else{
+                $re = Db::name($result['table_name'])->where('id', $result['object_id'])->delete();
+            }
+
             if ($re) {
                 $res = Db::name('recycleBin')->where('id', $id)->delete();
+                if($result['table_name'] === 'portal_post'){
+                    Db::name('portal_category_post')->where('post_id',$result['object_id'])->delete();
+                    Db::name('portal_tag_post')->where('post_id',$result['object_id'])->delete();
+                }
                 if ($res) {
                     $this->success("删除成功！");
                 }
+
             }
         }
     }

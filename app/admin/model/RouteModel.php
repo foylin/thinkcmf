@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -131,6 +131,14 @@ class RouteModel extends Model
         return empty($url) ? '' : $url;
     }
 
+    public function getFullUrlByUrl($url)
+    {
+        $full_url = $this->where('url', $url)->value('full_url');
+
+        return empty($full_url) ? '' : $full_url;
+        
+    }
+
     public function buildFullUrl($action, $vars)
     {
         // 解析参数
@@ -150,7 +158,7 @@ class RouteModel extends Model
         return $fullUrl;
     }
 
-    public function exists($url, $fullUrl)
+    public function existsRoute($url, $fullUrl)
     {
 
         $findRouteCount = $this->where(['url' => $url, 'full_url' => ['neq', $fullUrl]])->count();

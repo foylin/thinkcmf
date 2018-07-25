@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: Dean <zxxjjforever@163.com>
 // +----------------------------------------------------------------------
@@ -14,14 +14,10 @@ use think\Db;
 class IndexController extends PluginBaseController
 {
 
-    function index($id)
+    function index()
     {
 
         $users = Db::name("user")->limit(0, 5)->select();
-        $demos=PluginDemoModel::all();
-
-       // print_r($demos);
-
         $this->assign("users", $users);
 
         return $this->fetch("/index");

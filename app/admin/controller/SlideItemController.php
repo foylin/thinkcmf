@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -144,9 +144,16 @@ class SlideItemController extends AdminBaseController
     public function delete()
     {
         $id     = $this->request->param('id', 0, 'intval');
+
+        $slideItem = Db::name('slideItem')->find($id);
+
         $result = Db::name('slideItem')->delete($id);
         if ($result) {
-            $this->success("删除成功！", url("SlideItem/index"));
+            //删除图片。
+//            if (file_exists("./upload/".$slideItem['image'])){
+//                @unlink("./upload/".$slideItem['image']);
+//            }
+            $this->success("删除成功！", url("SlideItem/index",["slide_id"=>$slideItem['slide_id']]));
         } else {
             $this->error('删除失败！');
         }

@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2018 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -61,7 +61,7 @@ class LoginController extends HomeBaseController
             }
 
             if (!cmf_captcha_check($data['captcha'])) {
-                $this->error('验证码错误');
+                $this->error(lang('CAPTCHA_NOT_RIGHT'));
             }
 
             $userModel         = new UserModel();
@@ -69,7 +69,7 @@ class LoginController extends HomeBaseController
             if (Validate::is($data['username'], 'email')) {
                 $user['user_email'] = $data['username'];
                 $log                = $userModel->doEmail($user);
-            } else if (preg_match('/(^(13\d|15[^4\D]|17[13678]|18\d)\d{8}|170[^346\D]\d{7})$/', $data['username'])) {
+            } else if (preg_match('/(^(13\d|15[^4\D]|17[013678]|18\d)\d{8})$/', $data['username'])) {
                 $user['mobile'] = $data['username'];
                 $log            = $userModel->doMobile($user);
             } else {
@@ -80,13 +80,17 @@ class LoginController extends HomeBaseController
             $redirect                   = empty($session_login_http_referer) ? $this->request->root() : $session_login_http_referer;
             switch ($log) {
                 case 0:
-                    $this->success('登录成功', $redirect);
+                    cmf_user_action('login');
+                    $this->success(lang('LOGIN_SUCCESS'), $redirect);
                     break;
                 case 1:
-                    $this->error('登录密码错误');
+                    $this->error(lang('PASSWORD_NOT_RIGHT'));
                     break;
                 case 2:
                     $this->error('账户不存在');
+                    break;
+                case 3:
+                    $this->error('账号被禁止访问系统');
                     break;
                 default :
                     $this->error('未受理的请求');
@@ -129,9 +133,11 @@ class LoginController extends HomeBaseController
                 $this->error($validate->getError());
             }
 
-            if (!cmf_captcha_check($data['captcha'])) {
+            $captchaId = empty($data['_captcha_id']) ? '' : $data['_captcha_id'];
+            if (!cmf_captcha_check($data['captcha'], $captchaId)) {
                 $this->error('验证码错误');
             }
+
             $errMsg = cmf_check_verification_code($data['username'], $data['verification_code']);
             if (!empty($errMsg)) {
                 $this->error($errMsg);
@@ -142,7 +148,7 @@ class LoginController extends HomeBaseController
 
                 $log = $userModel->emailPasswordReset($data['username'], $data['password']);
 
-            } else if (preg_match('/(^(13\d|15[^4\D]|17[13678]|18\d)\d{8}|170[^346\D]\d{7})$/', $data['username'])) {
+            } else if (preg_match('/(^(13\d|15[^4\D]|17[013678]|18\d)\d{8})$/', $data['username'])) {
                 $user['mobile'] = $data['username'];
                 $log            = $userModel->mobilePasswordReset($data['username'], $data['password']);
             } else {
